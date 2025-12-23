@@ -1,30 +1,3 @@
-# Promtail Configuration for API Services Log Collection
-# 
-# This configuration collects logs from Docker containers, specifically targeting:
-# - api-auth service (expected on port 3001)
-# - api-management service (expected on port 3002)
-#
-# For automatic service discovery, ensure your API services are running as Docker containers
-# with names containing "api-auth" or "api-management". 
-#
-# Example Docker Compose service configuration for API services:
-# services:
-#   api-auth:
-#     image: your-api-auth-image
-#     container_name: api-auth
-#     ports:
-#       - "3001:3001"
-#     labels:
-#       - "logging=promtail"  # Optional: explicit logging label
-#   
-#   api-management:
-#     image: your-api-management-image  
-#     container_name: api-management
-#     ports:
-#       - "3002:3002"
-#     labels:
-#       - "logging=promtail"  # Optional: explicit logging label
-
 server:
   http_listen_port: 9080
   grpc_listen_port: 0
