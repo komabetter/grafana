@@ -20,7 +20,7 @@ services:
       test:
         [
           "CMD-SHELL",
-          "wget --no-verbose --tries=1 --spider http://localhost:3100/ready || exit 1",
+          "wget --no-verbose --tries=1 --spider http://localhost:${LOKI_PORT}/ready || exit 1",
         ]
       interval: ${HEALTH_CHECK_INTERVAL}s
       timeout: ${HEALTH_CHECK_TIMEOUT}s
@@ -79,7 +79,7 @@ services:
     restart: ${RESTART_POLICY}
     user: "${GRAFANA_USER_ID}:${GRAFANA_GROUP_ID}"
     healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:3000/api/health || exit 1"]
+      test: ["CMD-SHELL", "curl -f http://localhost:${GRAFANA_PORT}/api/health || exit 1"]
       interval: ${HEALTH_CHECK_INTERVAL}s
       timeout: ${HEALTH_CHECK_TIMEOUT}s
       retries: ${HEALTH_CHECK_RETRIES}
