@@ -25,7 +25,7 @@ services:
       interval: ${HEALTH_CHECK_INTERVAL}s
       timeout: ${HEALTH_CHECK_TIMEOUT}s
       retries: ${HEALTH_CHECK_RETRIES}
-      start_period: ${HEALTH_CHECK_START_PERIOD}s
+      start_period: 60s
 
   # Promtail - Log collection agent (depends on Loki)
   promtail:
@@ -69,6 +69,7 @@ services:
       - GF_PATHS_LOGS=/var/log/grafana
       - GF_PATHS_PLUGINS=/var/lib/grafana/plugins
       - GF_PATHS_PROVISIONING=/etc/grafana/provisioning
+      - GF_SERVER_HTTP_PORT=${GRAFANA_PORT}
     volumes:
       # Use bind mount if ./data/grafana exists, otherwise fallback to named volume
       - grafana-data:/var/lib/grafana
@@ -79,7 +80,11 @@ services:
     restart: ${RESTART_POLICY}
     user: "${GRAFANA_USER_ID}:${GRAFANA_GROUP_ID}"
     healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:${GRAFANA_PORT}/api/health || exit 1"]
+      test:
+        [
+          "CMD-SHELL",
+          "curl -f http://localhost:${GRAFANA_PORT}/api/health || exit 1",
+        ]
       interval: ${HEALTH_CHECK_INTERVAL}s
       timeout: ${HEALTH_CHECK_TIMEOUT}s
       retries: ${HEALTH_CHECK_RETRIES}

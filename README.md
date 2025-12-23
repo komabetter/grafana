@@ -5,8 +5,9 @@ A Docker Compose-based logging and monitoring solution using Grafana, Loki, and 
 ## Overview
 
 This setup provides:
+
 - **Grafana**: Web-based visualization and dashboards
-- **Loki**: Log aggregation and storage backend  
+- **Loki**: Log aggregation and storage backend
 - **Promtail**: Log collection agent for Docker containers
 
 ## Quick Start
@@ -14,74 +15,133 @@ This setup provides:
 ### Prerequisites
 
 - Docker and Docker Compose installed
-- API services running (api-auth on port 3001, api-management on port 3002)
+- Kong Gateway running (if using Kong integration)
+- Ubuntu Server or compatible Linux distribution
 
-### Setup
+### Setup for Ubuntu Server
 
 1. **Clone and navigate to the project directory**
+
    ```bash
    cd grafana-logging-setup
    ```
 
 2. **Configure environment variables**
+
    ```bash
    cp .env.template .env
    # Edit .env file with your preferred settings
    ```
 
-3. **Set up data directories**
+3. **Make scripts executable**
+
    ```bash
-   # On Windows
-   scripts\setup-volumes.bat
-   
-   # On Linux/macOS
-   chmod +x scripts/setup-volumes.sh
+   chmod +x scripts/*.sh
+   ```
+
+4. **Set up data directories**
+
+   ```bash
    ./scripts/setup-volumes.sh
    ```
 
-4. **Start the logging stack**
+5. **Validate setup**
+
+   ```bash
+   ./scripts/validate-setup.sh
+   ```
+
+6. **Validate configuration**
+
+   ```bash
+   ./scripts/validate-logging-config.sh
+   ```
+
+7. **Start the logging stack**
+
    ```bash
    docker-compose up -d
    ```
 
-   **Or use the comprehensive startup script with validation:**
+   **Or use the comprehensive startup script (recommended):**
+
    ```bash
-   # On Windows
-   scripts\startup-with-validation.bat
-   
-   # On Linux/macOS
-   chmod +x scripts/startup-with-validation.sh
    ./scripts/startup-with-validation.sh
    ```
 
-5. **Verify services are running**
+8. **Setup Kong Gateway routes** (if using Kong)
    ```bash
-   # On Windows
-   scripts\validate-setup.bat
-   
-   # On Linux/macOS
-   ./scripts/validate-setup.sh
+   ./scripts/setup-kong-routes.sh
    ```
 
-6. **Validate service connectivity (optional)**
-   ```bash
-   # On Windows
-   scripts\validate-services.bat
-   
-   # On Linux/macOS
-   ./scripts/validate-services.sh
+### Quick Ubuntu Server Commands
+
+For a quick setup, run these commands in sequence:
+
+```bash
+# Make scripts executable and run setup
+chmod +x scripts/*.sh
+./scripts/setup-volumes.sh
+./scripts/validate-setup.sh
+./scripts/validate-logging-config.sh
+docker-compose up -d
+
+# Optional: Setup Kong routes if Kong Gateway is running
+./scripts/setup-kong-routes.sh
+```
+
+### Setup for Windows
+
+1. **Clone and navigate to the project directory**
+
+   ```cmd
+   cd grafana-logging-setup
+   ```
+
+2. **Configure environment variables**
+
+   ```cmd
+   copy .env.template .env
+   REM Edit .env file with your preferred settings
+   ```
+
+3. **Set up data directories**
+
+   ```cmd
+   scripts\setup-volumes.bat
+   ```
+
+4. **Start the logging stack**
+
+   ```cmd
+   docker-compose up -d
+   ```
+
+   **Or use the comprehensive startup script:**
+
+   ```cmd
+   scripts\startup-with-validation.bat
    ```
 
 ## Service Access
 
 ### Grafana Dashboard
-- **URL**: http://localhost:3000
+
+- **URL**: http://localhost:3100 (admin/admin)
 - **Username**: admin
 - **Password**: admin (or value from .env file)
 
-### Loki API (Internal)
-- **URL**: http://localhost:3100
-- **Health Check**: http://localhost:3100/ready
+### Loki API
+
+- **URL**: http://localhost:3101
+- **Health Check**: http://localhost:3101/ready
+
+### Kong Gateway Integration (Optional)
+
+- **Grafana via Kong**: http://localhost:8000/grafana
+- **Loki API via Kong**: http://localhost:8000/loki
+- **Kong Admin API**: http://localhost:8001
+- **Kong Manager GUI**: http://localhost:8002
 
 ## Configuration
 
@@ -89,13 +149,13 @@ This setup provides:
 
 Key settings in `.env` file:
 
-| Variable | Default | Description |
-|----------|---------|-------------|
-| `GRAFANA_PORT` | 3000 | Grafana web interface port |
-| `LOKI_PORT` | 3100 | Loki API port |
-| `GRAFANA_ADMIN_PASSWORD` | admin | Grafana admin password |
-| `LOKI_RETENTION_PERIOD` | 7d | Log retention period |
-| `TARGET_API_SERVICES` | api-auth,api-management | Services to collect logs from |
+| Variable                 | Default                 | Description                   |
+| ------------------------ | ----------------------- | ----------------------------- |
+| `GRAFANA_PORT`           | 3100                    | Grafana web interface port    |
+| `LOKI_PORT`              | 3101                    | Loki API port                 |
+| `GRAFANA_ADMIN_PASSWORD` | admin                   | Grafana admin password        |
+| `LOKI_RETENTION_PERIOD`  | 7d                      | Log retention period          |
+| `TARGET_API_SERVICES`    | api-auth,api-management | Services to collect logs from |
 
 ### Custom Configuration Files
 
@@ -108,7 +168,7 @@ Key settings in `.env` file:
 
 ### Viewing Logs
 
-1. Open Grafana at http://localhost:3000
+1. Open Grafana at http://localhost:3100
 2. Navigate to "Explore" in the left sidebar
 3. Select "Loki" as the data source
 4. Use LogQL queries to filter logs:
@@ -127,6 +187,7 @@ Key settings in `.env` file:
 ### Dashboard Features
 
 The pre-configured dashboard includes:
+
 - Real-time log streaming
 - Service-based log filtering
 - Log level filtering (info, warn, error, debug)
@@ -136,6 +197,7 @@ The pre-configured dashboard includes:
 ### Log Collection
 
 Promtail automatically collects logs from:
+
 - Docker containers matching the target services
 - Container stdout/stderr streams
 - Automatic service labeling and tagging
@@ -145,15 +207,17 @@ Promtail automatically collects logs from:
 ### Validation Scripts
 
 **Basic setup validation:**
+
 ```bash
 # On Windows
 scripts\validate-setup.bat
 
-# On Linux/macOS  
+# On Linux/macOS
 ./scripts/validate-setup.sh
 ```
 
 **Service connectivity validation:**
+
 ```bash
 # On Windows
 scripts\validate-services.bat
@@ -163,6 +227,7 @@ scripts\validate-services.bat
 ```
 
 **Configuration validation:**
+
 ```bash
 # On Windows
 scripts\validate-logging-config.bat
@@ -174,6 +239,7 @@ scripts\validate-logging-config.bat
 ### Common Issues
 
 **Services won't start:**
+
 ```bash
 # Check service status
 docker-compose ps
@@ -185,23 +251,26 @@ docker-compose logs promtail
 ```
 
 **Permission issues with volumes:**
+
 ```bash
 # Reset volume permissions
 docker-compose down
 # On Windows
 scripts\setup-volumes.bat
 
-# On Linux/macOS  
+# On Linux/macOS
 sudo ./scripts/setup-volumes.sh
 docker-compose up -d
 ```
 
 **Grafana can't connect to Loki:**
-- Verify Loki is healthy: `curl http://localhost:3100/ready`
+
+- Verify Loki is healthy: `curl http://localhost:3101/ready`
 - Check network connectivity: `docker-compose logs loki`
 - Restart services: `docker-compose restart`
 
 **No logs appearing:**
+
 - Verify target API services are running
 - Check Promtail configuration: `docker-compose logs promtail`
 - Ensure Docker socket is accessible
@@ -209,13 +278,14 @@ docker-compose up -d
 ### Health Checks
 
 All services include health checks:
+
 ```bash
 # Check all service health
 docker-compose ps
 
 # Individual service health
-curl http://localhost:3100/ready  # Loki
-curl http://localhost:3000/api/health  # Grafana
+curl http://localhost:3101/ready  # Loki
+curl http://localhost:3100/api/health  # Grafana
 ```
 
 ## Data Persistence
@@ -285,6 +355,7 @@ tar -xzf grafana-backup-YYYYMMDD.tar.gz
 ## Support
 
 For issues and questions:
+
 1. Check the troubleshooting section above
 2. Review Docker Compose logs: `docker-compose logs`
 3. Verify configuration files in `config/` directory
