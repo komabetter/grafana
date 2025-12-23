@@ -6,7 +6,7 @@ services:
     image: grafana/loki:2.9.0
     container_name: loki
     ports:
-      - "${LOKI_PORT}:3100"
+      - "${LOKI_PORT}:${LOKI_PORT}"
     command: -config.file=/etc/loki/loki-config.yml
     volumes:
       - ./config/loki-config.yml:/etc/loki/loki-config.yml
@@ -59,7 +59,7 @@ services:
     image: grafana/grafana:10.1.0
     container_name: grafana
     ports:
-      - "${GRAFANA_PORT}:3000"
+      - "${GRAFANA_PORT}:${GRAFANA_PORT}"
     environment:
       - GF_SECURITY_ADMIN_USER=${GRAFANA_ADMIN_USER}
       - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD}
