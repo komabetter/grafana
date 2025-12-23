@@ -6,7 +6,7 @@ services:
     image: grafana/loki:2.9.0
     container_name: loki
     ports:
-      - "${LOKI_PORT}:${LOKI_PORT}"
+      - "${LOKI_PORT}:3100"
     command: -config.file=/etc/loki/loki-config.yml
     volumes:
       - ./config/loki-config.yml:/etc/loki/loki-config.yml
@@ -20,7 +20,7 @@ services:
       test:
         [
           "CMD-SHELL",
-          "wget --no-verbose --tries=1 --spider http://localhost:${LOKI_PORT}/ready || exit 1",
+          "wget --no-verbose --tries=1 --spider http://localhost:3100/ready || exit 1",
         ]
       interval: ${HEALTH_CHECK_INTERVAL}s
       timeout: ${HEALTH_CHECK_TIMEOUT}s
@@ -59,7 +59,7 @@ services:
     image: grafana/grafana:10.1.0
     container_name: grafana
     ports:
-      - "${GRAFANA_PORT}:${GRAFANA_PORT}"
+      - "${GRAFANA_PORT}:3000"
     environment:
       - GF_SECURITY_ADMIN_USER=${GRAFANA_ADMIN_USER}
       - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD}
@@ -69,7 +69,6 @@ services:
       - GF_PATHS_LOGS=/var/log/grafana
       - GF_PATHS_PLUGINS=/var/lib/grafana/plugins
       - GF_PATHS_PROVISIONING=/etc/grafana/provisioning
-      - GF_SERVER_HTTP_PORT=${GRAFANA_PORT}
     volumes:
       # Use bind mount if ./data/grafana exists, otherwise fallback to named volume
       - grafana-data:/var/lib/grafana
@@ -83,7 +82,7 @@ services:
       test:
         [
           "CMD-SHELL",
-          "curl -f http://localhost:${GRAFANA_PORT}/api/health || exit 1",
+          "curl -f http://localhost:3000/api/health || exit 1",
         ]
       interval: ${HEALTH_CHECK_INTERVAL}s
       timeout: ${HEALTH_CHECK_TIMEOUT}s
