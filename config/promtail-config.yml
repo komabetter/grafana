@@ -1,0 +1,135 @@
+# Promtail Configuration for API Services Log Collection
+# 
+# This configuration collects logs from Docker containers, specifically targeting:
+# - api-auth service (expected on port 3001)
+# - api-management service (expected on port 3002)
+#
+# For automatic service discovery, ensure your API services are running as Docker containers
+# with names containing "api-auth" or "api-management". 
+#
+# Example Docker Compose service configuration for API services:
+# services:
+#   api-auth:
+#     image: your-api-auth-image
+#     container_name: api-auth
+#     ports:
+#       - "3001:3001"
+#     labels:
+#       - "logging=promtail"  # Optional: explicit logging label
+#   
+#   api-management:
+#     image: your-api-management-image  
+#     container_name: api-management
+#     ports:
+#       - "3002:3002"
+#     labels:
+#       - "logging=promtail"  # Optional: explicit logging label
+
+server:
+  http_listen_port: 9080
+  grpc_listen_port: 0
+
+positions:
+  filename: /tmp/positions.yaml
+
+clients:
+  - url: http://loki:3100/loki/api/v1/push
+
+scrape_configs:
+  # Primary Docker container logs scraping using service discovery
+  - job_name: docker-containers
+    docker_sd_configs:
+      - host: unix:///var/run/docker.sock
+        refresh_interval: 5s
+    
+    relabel_configs:
+      # Extract container name and clean it up
+      - source_labels: ['__meta_docker_container_name']
+        regex: '/?(.*)'
+        target_label: container_name
+        replacement: '${1}'
+      
+      # Extract compose service name if available
+      - source_labels: ['__meta_docker_container_label_com_docker_compose_service']
+        target_label: compose_service
+      
+      # Extract compose project name if available  
+      - source_labels: ['__meta_docker_container_label_com_docker_compose_project']
+        target_label: compose_project
+      
+      # Only keep containers that match our target services (api-auth, api-management)
+      # or have the logging=promtail label
+      - source_labels: ['__meta_docker_container_name', '__meta_docker_container_label_logging']
+        regex: '/?.*(?:api-auth|api-management).*|/?.*promtail.*'
+        action: keep
+      
+      # Set service name based on container name pattern
+      - source_labels: ['__meta_docker_container_name']
+        regex: '/?.*?(api-auth).*'
+        target_label: service_name
+        replacement: 'api-auth'
+      
+      - source_labels: ['__meta_docker_container_name']
+        regex: '/?.*?(api-management).*'
+        target_label: service_name
+        replacement: 'api-management'
+      
+      # Set job name to service name if identified, otherwise use container name
+      - source_labels: ['service_name']
+        regex: '(.*)'
+        target_label: job
+        replacement: '${1}'
+      
+      - source_labels: ['job', 'container_name']
+        regex: '^$;(.*)'
+        target_label: job
+        replacement: '${1}'
+      
+      # Set the log path for Docker containers
+      - source_labels: ['__meta_docker_container_id']
+        target_label: __path__
+        replacement: '/var/lib/docker/containers/${1}/${1}-json.log'
+
+    pipeline_stages:
+      # Parse Docker JSON log format
+      - json:
+          expressions:
+            output: log
+            stream: stream
+            timestamp: time
+      
+      # Parse timestamp
+      - timestamp:
+          source: timestamp
+          format: RFC3339Nano
+      
+      # Extract log level from log content (common patterns)
+      - regex:
+          expression: '(?i)(?P<level>debug|info|warn|warning|error|fatal|panic)'
+          source: output
+      
+      # Set log level label if found
+      - labels:
+          level:
+      
+      # Add port information based on service name
+      - match:
+          selector: '{service_name="api-auth"}'
+          stages:
+            - static_labels:
+                port: "3001"
+      
+      - match:
+          selector: '{service_name="api-management"}'
+          stages:
+            - static_labels:
+                port: "3002"
+      
+      # Output the actual log message
+      - output:
+          source: output
+
+# Limits configuration to prevent resource exhaustion
+limits_config:
+  readline_rate: 10000
+  readline_burst: 20000
